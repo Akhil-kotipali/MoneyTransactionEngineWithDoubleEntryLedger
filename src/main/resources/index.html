@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayMoneyToday | Double-Entry Transaction Engine & Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-surface: #101726;
+            --bg-card: rgba(19, 28, 46, 0.75);
+            --bg-card-hover: rgba(26, 38, 62, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(99, 102, 241, 0.5);
+            --border-glow: rgba(56, 189, 248, 0.35);
+
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.3);
+
+            --accent-cyan: #06b6d4;
+            --accent-cyan-glow: rgba(6, 182, 212, 0.25);
+
+            --accent-emerald: #10b981;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+
+            --accent-rose: #f43f5e;
+            --accent-rose-glow: rgba(244, 63, 94, 0.25);
+
+            --accent-amber: #f59e0b;
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.18);
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 28px 80px 28px;
+        }
+
+        /* Top Bar */
+        header.top-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(16px);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+            color: white;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .brand-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .engine-badge {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .url-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .url-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            width: 170px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+            display: inline-block;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: var(--border-glow);
+        }
+
+        /* Double-Entry Ledger Visual Banner */
+        .ledger-banner {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 18px 24px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ledger-banner::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, var(--primary), var(--accent-cyan));
+        }
+
+        .ledger-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .card-icon.debit {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        .card-icon.credit {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .card-info h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .ledger-center-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            text-align: center;
+        }
+
+        .flow-pill {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .flow-arrow {
+            font-size: 1.4rem;
+            color: var(--primary);
+            animation: pulseArrow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseArrow {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 6px var(--primary)); }
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-secondary);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(79, 70, 229, 0.95));
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-badge {
+            font-size: 0.68rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: #e2e8f0;
+        }
+
+        /* Main Workspace Layout */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+            .ledger-banner {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 26px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .endpoint-tag {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .endpoint-tag.post {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .endpoint-tag.get {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        /* Form Controls */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-grid.single-col {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .label-hint {
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="email"],
+        select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 11px 14px;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--border-focus);
+            background: rgba(15, 23, 42, 0.95);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+        }
+
+        input::placeholder {
+            color: #475569;
+        }
+
+        .chip-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .amount-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .amount-chip:hover {
+            background: rgba(99, 102, 241, 0.15);
+            color: #c7d2fe;
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .input-with-action {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-with-action input {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+        }
+
+        .btn-icon-addon {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            padding: 0 14px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon-addon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: var(--border-glow);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-md);
+            padding: 13px 20px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-emerald {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+        .btn-emerald:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-rose {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+            box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+        }
+        .btn-rose:hover {
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5);
+        }
+
+        .preset-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px dashed var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            margin-bottom: 16px;
+        }
+
+        .preset-row span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .preset-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-preset {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-preset:hover {
+            background: rgba(99, 102, 241, 0.15);
+            color: #c7d2fe;
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        /* Inspector Area */
+        .inspector-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: sticky;
+            top: 24px;
+            height: fit-content;
+        }
+
+        .inspector-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .inspector-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .inspector-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mini-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mini-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--border-glow);
+        }
+
+        .call-meta-box {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+
+        .call-path {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .method-pill {
+            font-weight: 700;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .method-pill.POST { background: #065f46; color: #34d399; }
+        .method-pill.GET { background: #075985; color: #38bdf8; }
+        .method-pill.PUT { background: #78350f; color: #fbbf24; }
+        .method-pill.DELETE { background: #881337; color: #fb7185; }
+
+        .call-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+        }
+
+        .status-badge.s200 { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+        .status-badge.s400 { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+        .status-badge.s500 { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+        .status-badge.idle { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+
+        .time-pill {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+        }
+
+        .code-container {
+            background: #0b1120;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        pre.code-view {
+            padding: 14px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            max-height: 280px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        /* JSON Highlighting */
+        .json-key { color: #38bdf8; }
+        .json-string { color: #34d399; }
+        .json-number { color: #f59e0b; }
+        .json-boolean { color: #a855f7; }
+        .json-null { color: #f43f5e; }
+
+        /* Paginated Data Tables */
+        .data-table-container {
+            overflow-x: auto;
+            margin-top: 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: rgba(11, 17, 32, 0.6);
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            text-align: left;
+        }
+
+        table.data-table th {
+            padding: 12px 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid var(--border-subtle);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        table.data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        table.data-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        /* Pagination Bar */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+        }
+
+        .pagination-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-page {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background: rgba(99, 102, 241, 0.2);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-size-select {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            outline: none;
+            width: auto;
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 6px 12px;
+        }
+
+        .filter-input-wrap input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            width: 140px;
+        }
+
+        /* Status & Type Badges */
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .badge-status.COMPLETED { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .badge-status.PENDING { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .badge-status.FAILED { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); }
+
+        .badge-entry {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .badge-entry.CREDIT { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-entry.DEBIT { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+        /* Quick Account Cards */
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .user-preview-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .user-preview-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .card-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .avatar.alice { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; }
+        .avatar.bob { background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; }
+
+        .balance-display {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .balance-display span.currency {
+            font-size: 0.8rem;
+            color: var(--accent-emerald);
+            font-weight: 600;
+        }
+
+        /* Toast Notifications */
+        #toastContainer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 420px;
+            backdrop-filter: blur(12px);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.success { border-left: 4px solid var(--accent-emerald); }
+        .toast.error { border-left: 4px solid var(--accent-rose); }
+        .toast.info { border-left: 4px solid var(--primary); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Sub tabs for Account CRUD */
+        .sub-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .sub-tab-btn {
+            flex: 1;
+            padding: 7px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .sub-tab-btn.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="brand-section">
+                <div class="brand-logo">₹</div>
+                <div class="brand-title">
+                    <h1>PayMoneyToday Engine</h1>
+                    <p>Double-Entry Transaction Engine &amp; Explorer <span class="engine-badge">API Live</span></p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="url-box" title="Backend Server URL">
+                    <span class="status-dot"></span>
+                    <label for="backendBaseUrl" style="font-size: 0.72rem; color: var(--text-muted);">HOST:</label>
+                    <input type="text" id="backendBaseUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
+                </div>
+                <button class="btn-ghost" id="btnPingHealth" onclick="testConnection()">
+                    <span>⚡ Ping API</span>
+                </button>
+                <button class="btn-ghost" id="btnQuickDemoSetup" onclick="loadDemoScenario()">
+                    <span>✨ Alice &amp; Bob Preset</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Double-Entry Ledger Flow Banner -->
+        <div class="ledger-banner">
+            <div class="ledger-card">
+                <div class="card-icon debit">-</div>
+                <div class="card-info">
+                    <h4>DEBIT ENTRY</h4>
+                    <p>Sender Wallet Balance Deducted</p>
+                </div>
+            </div>
+
+            <div class="ledger-center-flow">
+                <div class="flow-pill">Double-Entry Ledger Invariant (Σ = 0)</div>
+                <div class="flow-arrow">⇄</div>
+                <span id="globalZeroSumBanner" style="font-size: 0.75rem; color: var(--accent-emerald); font-family: var(--font-mono); font-weight: 600;">Global Zero-Sum: Verified</span>
+            </div>
+
+            <div class="ledger-card">
+                <div class="card-icon credit">+</div>
+                <div class="card-info">
+                    <h4>CREDIT ENTRY</h4>
+                    <p>Receiver Wallet Balance Credited</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Live Wallets Display -->
+        <div class="accounts-grid">
+            <div class="user-preview-card" id="cardAlice">
+                <div class="card-top">
+                    <div class="card-user-info">
+                        <div class="avatar alice">A</div>
+                        <div>
+                            <div style="font-size: 0.88rem; font-weight: 600;">alice</div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">Wallet #1</div>
+                        </div>
+                    </div>
+                    <button class="mini-btn" onclick="prefillSender('alice', 'pass123')">Set Sender</button>
+                </div>
+                <div class="balance-display">
+                    <span class="currency">INR</span>
+                    <span id="aliceLiveBalance">0.00</span>
+                </div>
+            </div>
+
+            <div class="user-preview-card" id="cardBob">
+                <div class="card-top">
+                    <div class="card-user-info">
+                        <div class="avatar bob">B</div>
+                        <div>
+                            <div style="font-size: 0.88rem; font-weight: 600;">bob</div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">Wallet #2</div>
+                        </div>
+                    </div>
+                    <button class="mini-btn" onclick="prefillReceiver('bob')">Set Recipient</button>
+                </div>
+                <div class="balance-display">
+                    <span class="currency">INR</span>
+                    <span id="bobLiveBalance">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs" role="tablist">
+            <button class="tab-btn active" id="tabTransactionsBtn" onclick="switchTab('transactions')">
+                <span>📑 All Transactions</span>
+                <span class="tab-badge">PAGE</span>
+            </button>
+            <button class="tab-btn" id="tabLedgerBtn" onclick="switchTab('ledger')">
+                <span>⚖️ Double-Entry Ledger</span>
+                <span class="tab-badge">PAGE</span>
+            </button>
+            <button class="tab-btn" id="tabTransferBtn" onclick="switchTab('transfer')">
+                <span>💸 Transfer Money</span>
+                <span class="tab-badge">POST</span>
+            </button>
+            <button class="tab-btn" id="tabAddMoneyBtn" onclick="switchTab('addMoney')">
+                <span>💳 Add Balance</span>
+                <span class="tab-badge">POST</span>
+            </button>
+            <button class="tab-btn" id="tabUsersBtn" onclick="switchTab('users')">
+                <span>👤 Users</span>
+                <span class="tab-badge">CRUD</span>
+            </button>
+            <button class="tab-btn" id="tabRawApiBtn" onclick="switchTab('rawApi')">
+                <span>🛠️ Raw API</span>
+                <span class="tab-badge">DEV</span>
+            </button>
+        </nav>
+
+        <!-- Main Workspace Grid -->
+        <div class="workspace-grid">
+            <div class="forms-area">
+
+                <!-- 1. ALL TRANSACTIONS TAB (PAGINATED) -->
+                <div id="viewTransactions" class="tab-content active">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Transactions Explorer</h2>
+                                <p>View paginated transaction records with before/after balances, idempotency keys, and statuses.</p>
+                            </div>
+                            <span class="endpoint-tag get">GET /transactions</span>
+                        </div>
+
+                        <!-- Filter & Controls Bar -->
+                        <div class="filter-bar">
+                            <div class="filter-input-wrap">
+                                <label for="txFilterWalletId" style="font-size: 0.75rem; color: var(--text-muted);">Wallet ID:</label>
+                                <input type="number" id="txFilterWalletId" placeholder="All Wallets">
+                            </div>
+                            <button class="btn-ghost" onclick="fetchTransactions(0)">🔍 Search / Filter</button>
+                            <button class="btn-ghost" onclick="resetTxFilter()">↻ Reset</button>
+                            <button class="btn-ghost" style="margin-left: auto;" onclick="fetchTransactions(currentTxPage)">↻ Refresh</button>
+                        </div>
+
+                        <!-- Transactions Table -->
+                        <div class="data-table-container">
+                            <table class="data-table" id="transactionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Sender ➔ Receiver</th>
+                                        <th>Amount</th>
+                                        <th>Sender Balance</th>
+                                        <th>Receiver Balance</th>
+                                        <th>Status</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                            Loading transactions...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Bar -->
+                        <div class="pagination-bar">
+                            <div class="pagination-info" id="txPaginationInfo">Page 1 of 1 (0 items)</div>
+                            <div class="pagination-controls">
+                                <label for="txPageSize" style="font-size: 0.75rem; color: var(--text-muted);">Per Page:</label>
+                                <select id="txPageSize" class="page-size-select" onchange="fetchTransactions(0)">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <button class="btn-page" id="txPrevBtn" onclick="changeTxPage(-1)" disabled>◀ Prev</button>
+                                <button class="btn-page" id="txNextBtn" onclick="changeTxPage(1)" disabled>Next ▶</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. DOUBLE-ENTRY LEDGER TAB (PAGINATED) -->
+                <div id="viewLedger" class="tab-content">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Double-Entry Ledger Explorer</h2>
+                                <p>Paginated journal entries of Debits and Credits maintaining zero-sum financial invariants.</p>
+                            </div>
+                            <span class="endpoint-tag get">GET /ledger</span>
+                        </div>
+
+                        <!-- Filter & Controls Bar -->
+                        <div class="filter-bar">
+                            <div class="filter-input-wrap">
+                                <label for="ledgerFilterWalletId" style="font-size: 0.75rem; color: var(--text-muted);">Wallet ID:</label>
+                                <input type="number" id="ledgerFilterWalletId" placeholder="All Wallets">
+                            </div>
+                            <button class="btn-ghost" onclick="fetchLedger(0)">🔍 Search / Filter</button>
+                            <button class="btn-ghost" onclick="resetLedgerFilter()">↻ Reset</button>
+                            <button class="btn-ghost" onclick="runLedgerAuditPrompt()">⚖️ Audit Wallet</button>
+                            <button class="btn-ghost" style="margin-left: auto;" onclick="fetchLedger(currentLedgerPage)">↻ Refresh</button>
+                        </div>
+
+                        <!-- Ledger Table -->
+                        <div class="data-table-container">
+                            <table class="data-table" id="ledgerTable">
+                                <thead>
+                                    <tr>
+                                        <th>Ledger ID</th>
+                                        <th>Transaction ID</th>
+                                        <th>Wallet ID</th>
+                                        <th>Entry Type</th>
+                                        <th>Amount</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ledgerTableBody">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                            Loading ledger entries...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Bar -->
+                        <div class="pagination-bar">
+                            <div class="pagination-info" id="ledgerPaginationInfo">Page 1 of 1 (0 items)</div>
+                            <div class="pagination-controls">
+                                <label for="ledgerPageSize" style="font-size: 0.75rem; color: var(--text-muted);">Per Page:</label>
+                                <select id="ledgerPageSize" class="page-size-select" onchange="fetchLedger(0)">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <button class="btn-page" id="ledgerPrevBtn" onclick="changeLedgerPage(-1)" disabled>◀ Prev</button>
+                                <button class="btn-page" id="ledgerNextBtn" onclick="changeLedgerPage(1)" disabled>Next ▶</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. TRANSFER MONEY TAB -->
+                <div id="viewTransfer" class="tab-content">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Transfer Money</h2>
+                                <p>Atomic transfer between two wallets with idempotency and double-entry recording.</p>
+                            </div>
+                            <span class="endpoint-tag post">POST /wallet/transferMoney</span>
+                        </div>
+
+                        <div class="preset-row">
+                            <span>Quick Scenario Fill:</span>
+                            <div class="preset-actions">
+                                <button class="btn-preset" onclick="fillTransferScenario('alice', 'pass123', 'bob', 150.00)">Alice ➔ Bob (₹150)</button>
+                                <button class="btn-preset" onclick="fillTransferScenario('bob', 'pass123', 'alice', 75.50)">Bob ➔ Alice (₹75.50)</button>
+                                <button class="btn-preset" onclick="swapTransferRoles()">⇄ Swap</button>
+                            </div>
+                        </div>
+
+                        <form id="transferForm" onsubmit="handleTransferSubmit(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="tfUsername">
+                                        Sender Username
+                                        <span class="label-hint">TransferMoneyDTO.username</span>
+                                    </label>
+                                    <input type="text" id="tfUsername" name="username" placeholder="e.g. alice" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tfPassword">
+                                        Sender Password
+                                        <span class="label-hint">TransferMoneyDTO.password</span>
+                                    </label>
+                                    <input type="password" id="tfPassword" name="password" placeholder="Account password" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tfToReceiverUsername">
+                                        Recipient Username
+                                        <span class="label-hint">TransferMoneyDTO.toReceiverUsername</span>
+                                    </label>
+                                    <input type="text" id="tfToReceiverUsername" name="toReceiverUsername" placeholder="e.g. bob" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tfAmount">
+                                        Amount (INR)
+                                        <span class="label-hint">TransferMoneyDTO.amount</span>
+                                    </label>
+                                    <input type="number" id="tfAmount" name="amount" step="0.01" min="0.01" placeholder="50.00" required>
+                                    <div class="chip-group">
+                                        <span class="amount-chip" onclick="setTransferAmount(50)">+₹50</span>
+                                        <span class="amount-chip" onclick="setTransferAmount(100)">+₹100</span>
+                                        <span class="amount-chip" onclick="setTransferAmount(500)">+₹500</span>
+                                        <span class="amount-chip" onclick="setTransferAmount(1000)">+₹1,000</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="tfIdempotencyKey">
+                                        Idempotency Key
+                                        <span class="label-hint">TransferMoneyDTO.idempotencyKey</span>
+                                    </label>
+                                    <div class="input-with-action">
+                                        <input type="text" id="tfIdempotencyKey" name="idempotencyKey" placeholder="tx-uuid-..." required>
+                                        <button type="button" class="btn-icon-addon" onclick="generateIdempotencyKey('tfIdempotencyKey')">↻ New UUID</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary" id="btnSubmitTransfer">
+                                <span>🚀 Execute Transfer</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 4. ADD MONEY TAB -->
+                <div id="viewAddMoney" class="tab-content">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Add Balance to Wallet</h2>
+                                <p>Deposit funds into an existing user wallet to fund transactions.</p>
+                            </div>
+                            <span class="endpoint-tag post">POST /wallet/addMoney</span>
+                        </div>
+
+                        <div class="preset-row">
+                            <span>Quick Select Wallet:</span>
+                            <div class="preset-actions">
+                                <button class="btn-preset" onclick="fillAddMoneyScenario(1, 'alice', 500)">Wallet #1 (alice) +₹500</button>
+                                <button class="btn-preset" onclick="fillAddMoneyScenario(2, 'bob', 1000)">Wallet #2 (bob) +₹1,000</button>
+                            </div>
+                        </div>
+
+                        <form id="addMoneyForm" onsubmit="handleAddMoneySubmit(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="amWalletId">
+                                        Wallet ID
+                                        <span class="label-hint">AddBalanceDTO.walletId</span>
+                                    </label>
+                                    <input type="number" id="amWalletId" name="walletId" placeholder="1" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="amUsername">
+                                        Username
+                                        <span class="label-hint">AddBalanceDTO.username</span>
+                                    </label>
+                                    <input type="text" id="amUsername" name="username" placeholder="e.g. alice" required>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="amAmount">
+                                        Deposit Amount (INR)
+                                        <span class="label-hint">AddBalanceDTO.amount</span>
+                                    </label>
+                                    <input type="number" id="amAmount" name="amount" step="0.01" min="0.01" placeholder="500.00" required>
+                                    <div class="chip-group">
+                                        <span class="amount-chip" onclick="setAddAmount(100)">+₹100</span>
+                                        <span class="amount-chip" onclick="setAddAmount(500)">+₹500</span>
+                                        <span class="amount-chip" onclick="setAddAmount(1000)">+₹1,000</span>
+                                        <span class="amount-chip" onclick="setAddAmount(5000)">+₹5,000</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="amIdempotencyKey">
+                                        Idempotency Key
+                                        <span class="label-hint">AddBalanceDTO.idempotencyKey</span>
+                                    </label>
+                                    <div class="input-with-action">
+                                        <input type="text" id="amIdempotencyKey" name="idempotencyKey" placeholder="dep-uuid-...">
+                                        <button type="button" class="btn-icon-addon" onclick="generateIdempotencyKey('amIdempotencyKey')">↻ New UUID</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary btn-emerald" id="btnSubmitAddMoney">
+                                <span>💳 Deposit Funds</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 5. USERS TAB -->
+                <div id="viewUsers" class="tab-content">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Account &amp; User Hub</h2>
+                                <p>Manage user accounts. Creating an account automatically initializes an associated wallet.</p>
+                            </div>
+                            <span class="endpoint-tag post">/user/*</span>
+                        </div>
+
+                        <div class="sub-nav">
+                            <button class="sub-tab-btn active" id="subTabCreateUser" onclick="switchUserSubTab('create')">Create User</button>
+                            <button class="sub-tab-btn" id="subTabGetUser" onclick="switchUserSubTab('read')">Get User by ID</button>
+                            <button class="sub-tab-btn" id="subTabUpdateUser" onclick="switchUserSubTab('update')">Update User</button>
+                            <button class="sub-tab-btn" id="subTabDeleteUser" onclick="switchUserSubTab('delete')">Deactivate User</button>
+                        </div>
+
+                        <!-- CREATE USER -->
+                        <div id="userSubCreate" class="user-sub-content">
+                            <form id="createUserForm" onsubmit="handleCreateUserSubmit(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="cuName">Account Name (Username)</label>
+                                        <input type="text" id="cuName" name="name" placeholder="e.g. charlie" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cuEmail">Email Address</label>
+                                        <input type="email" id="cuEmail" name="email" placeholder="charlie@example.com" required>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label for="cuPassword">Password</label>
+                                        <input type="password" id="cuPassword" name="password" placeholder="Secure password" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="btnSubmitCreateUser">
+                                    <span>➕ Create User Account</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- READ USER -->
+                        <div id="userSubRead" class="user-sub-content" style="display: none;">
+                            <form id="readUserForm" onsubmit="handleReadUserSubmit(event)">
+                                <div class="form-grid single-col">
+                                    <div class="form-group">
+                                        <label for="ruId">User ID</label>
+                                        <input type="number" id="ruId" name="id" placeholder="1" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="btnSubmitReadUser">
+                                    <span>🔍 Fetch User Details</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- UPDATE USER -->
+                        <div id="userSubUpdate" class="user-sub-content" style="display: none;">
+                            <form id="updateUserForm" onsubmit="handleUpdateUserSubmit(event)">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label for="uuId">User ID to Update</label>
+                                        <input type="number" id="uuId" name="id" placeholder="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="uuName">New Name</label>
+                                        <input type="text" id="uuName" name="name" placeholder="Updated Name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="uuEmail">New Email</label>
+                                        <input type="email" id="uuEmail" name="email" placeholder="updated@example.com" required>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label for="uuPassword">Password Confirmation</label>
+                                        <input type="password" id="uuPassword" name="password" placeholder="Password" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="btnSubmitUpdateUser">
+                                    <span>💾 Save Updates</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- DELETE USER -->
+                        <div id="userSubDelete" class="user-sub-content" style="display: none;">
+                            <form id="deleteUserForm" onsubmit="handleDeleteUserSubmit(event)">
+                                <div class="form-grid single-col">
+                                    <div class="form-group">
+                                        <label for="duId">User ID to Deactivate</label>
+                                        <input type="number" id="duId" name="id" placeholder="1" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary btn-rose" id="btnSubmitDeleteUser">
+                                    <span>⚠️ Set Status to INACTIVE</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. RAW API EXPLORER -->
+                <div id="viewRawApi" class="tab-content">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <h2>Raw API Explorer</h2>
+                                <p>Send custom payloads directly to any endpoint to inspect headers, validation errors, and raw DTO structures.</p>
+                            </div>
+                            <span class="endpoint-tag post">CUSTOM</span>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rawMethod">HTTP Method</label>
+                                <select id="rawMethod">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="rawEndpoint">Endpoint Path</label>
+                                <input type="text" id="rawEndpoint" value="/transactions?page=0&size=10" placeholder="/transactions">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="rawBody">JSON Request Body (if POST/PUT)</label>
+                                <textarea id="rawBody" rows="6" style="width: 100%; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; color: #38bdf8; font-family: var(--font-mono); font-size: 0.82rem; outline: none;"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="sendRawRequest()">
+                            <span>⚡ Dispatch Custom HTTP Request</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Side: Live Response & API Inspector -->
+            <div class="inspector-area">
+                <div class="inspector-card">
+                    <div class="inspector-header">
+                        <div class="inspector-title">
+                            <span>📡 Live API Inspector</span>
+                        </div>
+                        <div class="inspector-actions">
+                            <button class="mini-btn" onclick="copyResponse()">📋 Copy JSON</button>
+                            <button class="mini-btn" onclick="clearInspector()">✕ Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="call-meta-box">
+                        <div class="call-path">
+                            <span id="inspMethod" class="method-pill GET">GET</span>
+                            <span id="inspEndpoint">/transactions?page=0&amp;size=10</span>
+                        </div>
+                        <div class="call-status">
+                            <span id="inspStatus" class="status-badge s200">READY</span>
+                            <span id="inspDuration" class="time-pill">0ms</span>
+                        </div>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span>REQUEST PAYLOAD</span>
+                            <span id="inspReqContentType">JSON</span>
+                        </div>
+                        <pre class="code-view" id="inspRequestBody">// Waiting for user action...</pre>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span>SERVER RESPONSE</span>
+                            <span id="inspRespTime">-</span>
+                        </div>
+                        <pre class="code-view" id="inspResponseBody">// Submit any form or view paginated tabs to inspect live server output.</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Pagination state
+        let currentTxPage = 0;
+        let totalTxPages = 1;
+        let currentLedgerPage = 0;
+        let totalLedgerPages = 1;
+
+        function getBaseUrl() {
+            const input = document.getElementById('backendBaseUrl');
+            let url = input ? input.value.trim() : '';
+            if (!url) {
+                url = window.location.origin;
+            }
+            return url.replace(/\/+$/, '');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            generateIdempotencyKey('tfIdempotencyKey');
+            generateIdempotencyKey('amIdempotencyKey');
+            fetchTransactions(0);
+            fetchLedger(0);
+        });
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(view => view.classList.remove('active'));
+
+            const viewMap = {
+                'transactions': 'viewTransactions',
+                'ledger': 'viewLedger',
+                'transfer': 'viewTransfer',
+                'addMoney': 'viewAddMoney',
+                'users': 'viewUsers',
+                'rawApi': 'viewRawApi'
+            };
+
+            const btnMap = {
+                'transactions': 'tabTransactionsBtn',
+                'ledger': 'tabLedgerBtn',
+                'transfer': 'tabTransferBtn',
+                'addMoney': 'tabAddMoneyBtn',
+                'users': 'tabUsersBtn',
+                'rawApi': 'tabRawApiBtn'
+            };
+
+            if (viewMap[tabName]) {
+                document.getElementById(viewMap[tabName]).classList.add('active');
+                document.getElementById(btnMap[tabName]).classList.add('active');
+            }
+
+            if (tabName === 'transactions') {
+                fetchTransactions(currentTxPage);
+            } else if (tabName === 'ledger') {
+                fetchLedger(currentLedgerPage);
+            }
+        }
+
+        function switchUserSubTab(subTab) {
+            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.user-sub-content').forEach(c => c.style.display = 'none');
+
+            if (subTab === 'create') {
+                document.getElementById('subTabCreateUser').classList.add('active');
+                document.getElementById('userSubCreate').style.display = 'block';
+            } else if (subTab === 'read') {
+                document.getElementById('subTabGetUser').classList.add('active');
+                document.getElementById('userSubRead').style.display = 'block';
+            } else if (subTab === 'update') {
+                document.getElementById('subTabUpdateUser').classList.add('active');
+                document.getElementById('userSubUpdate').style.display = 'block';
+            } else if (subTab === 'delete') {
+                document.getElementById('subTabDeleteUser').classList.add('active');
+                document.getElementById('userSubDelete').style.display = 'block';
+            }
+        }
+
+        // UUID generator
+        function generateIdempotencyKey(targetInputId) {
+            const uuid = 'tx-' + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            const input = document.getElementById(targetInputId);
+            if (input) input.value = uuid;
+            return uuid;
+        }
+
+        // API Caller
+        async function executeApiCall(method, path, body = null) {
+            const baseUrl = getBaseUrl();
+            const fullUrl = baseUrl + path;
+            const startTime = performance.now();
+
+            updateInspectorHeader(method, path, 'FETCHING...', '...');
+            document.getElementById('inspRequestBody').innerHTML = body ? syntaxHighlight(body) : '// No request body';
+            document.getElementById('inspResponseBody').innerHTML = '// Awaiting response...';
+
+            const headers = { 'Accept': 'application/json' };
+            if (body && (method === 'POST' || method === 'PUT')) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            try {
+                const options = { method, headers };
+                if (body && method !== 'GET' && method !== 'HEAD') {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(fullUrl, options);
+                const duration = Math.round(performance.now() - startTime);
+
+                let responseData;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    const text = await response.text();
+                    try { responseData = JSON.parse(text); } catch { responseData = text; }
+                }
+
+                updateInspectorHeader(method, path, response.status + ' ' + response.statusText, duration + 'ms', response.status);
+                document.getElementById('inspResponseBody').innerHTML = syntaxHighlight(responseData);
+
+                return { ok: response.ok, status: response.status, data: responseData, duration };
+            } catch (err) {
+                const duration = Math.round(performance.now() - startTime);
+                updateInspectorHeader(method, path, 'FAILED', duration + 'ms', 500);
+                const errorPayload = { error: err.message, host: baseUrl };
+                document.getElementById('inspResponseBody').innerHTML = syntaxHighlight(errorPayload);
+                return { ok: false, status: 0, data: errorPayload, duration };
+            }
+        }
+
+        function updateInspectorHeader(method, path, statusText, durationText, statusCode = 0) {
+            const methodPill = document.getElementById('inspMethod');
+            methodPill.textContent = method;
+            methodPill.className = 'method-pill ' + method;
+
+            document.getElementById('inspEndpoint').textContent = path;
+            document.getElementById('inspDuration').textContent = durationText;
+
+            const statusPill = document.getElementById('inspStatus');
+            statusPill.textContent = statusText;
+            statusPill.className = 'status-badge';
+
+            if (statusCode >= 200 && statusCode < 300) statusPill.classList.add('s200');
+            else if (statusCode >= 400 && statusCode < 500) statusPill.classList.add('s400');
+            else if (statusCode >= 500 || statusCode === 0) statusPill.classList.add('s500');
+            else statusPill.classList.add('idle');
+        }
+
+        // ================= TRANSACTIONS PAGINATION =================
+        async function fetchTransactions(page = 0) {
+            currentTxPage = page;
+            const size = parseInt(document.getElementById('txPageSize').value) || 10;
+            const walletId = document.getElementById('txFilterWalletId').value.trim();
+
+            let url = `/transactions?page=${page}&size=${size}`;
+            if (walletId) {
+                url = `/transactions/wallet/${walletId}?page=${page}&size=${size}`;
+            }
+
+            const res = await executeApiCall('GET', url);
+            const tbody = document.getElementById('transactionsTableBody');
+
+            if (!res.ok || !res.data) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--accent-rose); padding: 24px;">Failed to load transactions. Verify backend is running.</td></tr>`;
+                return;
+            }
+
+            const pageData = res.data;
+            const items = pageData.content || (Array.isArray(pageData) ? pageData : []);
+            totalTxPages = pageData.totalPages || 1;
+            const totalElements = pageData.totalElements !== undefined ? pageData.totalElements : items.length;
+
+            document.getElementById('txPaginationInfo').textContent = `Page ${page + 1} of ${totalTxPages} (${totalElements} transactions)`;
+            document.getElementById('txPrevBtn').disabled = page <= 0;
+            document.getElementById('txNextBtn').disabled = page >= totalTxPages - 1;
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No transactions found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(tx => {
+                const status = tx.status || 'COMPLETED';
+                const senderBal = `${formatMoney(tx.senderBalanceBefore)} ➔ ${formatMoney(tx.senderBalanceAfter)}`;
+                const receiverBal = `${formatMoney(tx.receiverBalanceBefore)} ➔ ${formatMoney(tx.receiverBalanceAfter)}`;
+                const date = tx.createdAt ? new Date(tx.createdAt).toLocaleString() : '-';
+
+                return `
+                    <tr>
+                        <td style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">#${tx.id}</td>
+                        <td style="font-weight: 600;">Wallet #${tx.senderWalletId} ➔ Wallet #${tx.receiverWalletId}</td>
+                        <td style="font-family: var(--font-mono); font-weight: 700; color: #f8fafc;">₹${parseFloat(tx.amount || 0).toFixed(2)}</td>
+                        <td style="font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;">${senderBal}</td>
+                        <td style="font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;">${receiverBal}</td>
+                        <td><span class="badge-status ${status}">${status}</span></td>
+                        <td style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function changeTxPage(delta) {
+            const newPage = currentTxPage + delta;
+            if (newPage >= 0 && newPage < totalTxPages) {
+                fetchTransactions(newPage);
+            }
+        }
+
+        function resetTxFilter() {
+            document.getElementById('txFilterWalletId').value = '';
+            fetchTransactions(0);
+        }
+
+        // ================= LEDGER PAGINATION =================
+        async function fetchLedger(page = 0) {
+            currentLedgerPage = page;
+            const size = parseInt(document.getElementById('ledgerPageSize').value) || 10;
+            const walletId = document.getElementById('ledgerFilterWalletId').value.trim();
+
+            let url = `/ledger?page=${page}&size=${size}`;
+            if (walletId) {
+                url = `/ledger/wallet/${walletId}?page=${page}&size=${size}`;
+            }
+
+            const res = await executeApiCall('GET', url);
+            const tbody = document.getElementById('ledgerTableBody');
+
+            if (!res.ok || !res.data) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-rose); padding: 24px;">Failed to load ledger entries.</td></tr>`;
+                return;
+            }
+
+            const pageData = res.data;
+            const items = pageData.content || (Array.isArray(pageData) ? pageData : []);
+            totalLedgerPages = pageData.totalPages || 1;
+            const totalElements = pageData.totalElements !== undefined ? pageData.totalElements : items.length;
+
+            document.getElementById('ledgerPaginationInfo').textContent = `Page ${page + 1} of ${totalLedgerPages} (${totalElements} entries)`;
+            document.getElementById('ledgerPrevBtn').disabled = page <= 0;
+            document.getElementById('ledgerNextBtn').disabled = page >= totalLedgerPages - 1;
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">No ledger entries found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(l => {
+                const entryType = l.entryType || 'DEBIT';
+                const date = l.createdAt ? new Date(l.createdAt).toLocaleString() : '-';
+                return `
+                    <tr>
+                        <td style="font-family: var(--font-mono); font-weight: 700; color: #a5b4fc;">#${l.id}</td>
+                        <td style="font-family: var(--font-mono); color: #38bdf8;">Tx #${l.transactionId}</td>
+                        <td style="font-weight: 600;">Wallet #${l.walletId}</td>
+                        <td><span class="badge-entry ${entryType}">${entryType}</span></td>
+                        <td style="font-family: var(--font-mono); font-weight: 700; color: ${entryType === 'CREDIT' ? '#34d399' : '#fb7185'};">
+                            ${entryType === 'CREDIT' ? '+' : '-'}₹${parseFloat(l.amount || 0).toFixed(2)}
+                        </td>
+                        <td style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function changeLedgerPage(delta) {
+            const newPage = currentLedgerPage + delta;
+            if (newPage >= 0 && newPage < totalLedgerPages) {
+                fetchLedger(newPage);
+            }
+        }
+
+        function resetLedgerFilter() {
+            document.getElementById('ledgerFilterWalletId').value = '';
+            fetchLedger(0);
+        }
+
+        async function runLedgerAuditPrompt() {
+            const walletId = prompt('Enter Wallet ID to Audit for Zero-Sum Double-Entry:', '1');
+            if (walletId) {
+                const res = await executeApiCall('GET', `/ledger/audit/${walletId}`);
+                if (res.ok && res.data === true) {
+                    showToast(`Audit for Wallet #${walletId}: PASSED (Double-entry balanced)`, 'success');
+                } else {
+                    showToast(`Audit for Wallet #${walletId}: Discrepancy or not found`, 'error');
+                }
+            }
+        }
+
+        // ================= TRANSFER & ADD MONEY =================
+        async function handleTransferSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                username: document.getElementById('tfUsername').value.trim(),
+                password: document.getElementById('tfPassword').value,
+                toReceiverUsername: document.getElementById('tfToReceiverUsername').value.trim(),
+                amount: parseFloat(document.getElementById('tfAmount').value),
+                idempotencyKey: document.getElementById('tfIdempotencyKey').value.trim()
+            };
+
+            const res = await executeApiCall('POST', '/wallet/transferMoney', payload);
+
+            if (res.ok) {
+                showToast(`Transferred ₹${payload.amount} from ${payload.username} to ${payload.toReceiverUsername}!`, 'success');
+                if (res.data && res.data.balanceRemaining !== undefined) {
+                    if (payload.username === 'alice') {
+                        document.getElementById('aliceLiveBalance').textContent = parseFloat(res.data.balanceRemaining).toFixed(2);
+                    } else if (payload.username === 'bob') {
+                        document.getElementById('bobLiveBalance').textContent = parseFloat(res.data.balanceRemaining).toFixed(2);
+                    }
+                }
+                generateIdempotencyKey('tfIdempotencyKey');
+                fetchTransactions(0);
+                fetchLedger(0);
+            } else {
+                const msg = res.data && res.data.message ? res.data.message : (res.data.error || 'Transfer failed');
+                showToast(`Transfer Failed: ${msg}`, 'error');
+            }
+        }
+
+        async function handleAddMoneySubmit(e) {
+            e.preventDefault();
+            const payload = {
+                walletId: parseInt(document.getElementById('amWalletId').value),
+                username: document.getElementById('amUsername').value.trim(),
+                amount: parseFloat(document.getElementById('amAmount').value),
+                idempotencyKey: document.getElementById('amIdempotencyKey').value.trim()
+            };
+
+            const res = await executeApiCall('POST', '/wallet/addMoney', payload);
+
+            if (res.ok) {
+                showToast(`Added ₹${payload.amount} to Wallet #${payload.walletId} (${payload.username})`, 'success');
+                if (res.data && res.data.balance !== undefined) {
+                    if (payload.username === 'alice') {
+                        document.getElementById('aliceLiveBalance').textContent = parseFloat(res.data.balance).toFixed(2);
+                    } else if (payload.username === 'bob') {
+                        document.getElementById('bobLiveBalance').textContent = parseFloat(res.data.balance).toFixed(2);
+                    }
+                }
+                generateIdempotencyKey('amIdempotencyKey');
+                fetchTransactions(0);
+                fetchLedger(0);
+            } else {
+                const msg = res.data && res.data.message ? res.data.message : (res.data.error || 'Deposit failed');
+                showToast(`Deposit Failed: ${msg}`, 'error');
+            }
+        }
+
+        // ================= USER CRUD =================
+        async function handleCreateUserSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('cuName').value.trim(),
+                email: document.getElementById('cuEmail').value.trim(),
+                password: document.getElementById('cuPassword').value
+            };
+            const res = await executeApiCall('POST', '/user', payload);
+            if (res.ok) showToast(`User ${payload.name} created!`, 'success');
+            else showToast('Failed to create user', 'error');
+        }
+
+        async function handleReadUserSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('ruId').value.trim();
+            const res = await executeApiCall('GET', `/user/${id}`);
+            if (res.ok) showToast(`Retrieved User #${id}`, 'success');
+            else showToast(`User #${id} not found`, 'error');
+        }
+
+        async function handleUpdateUserSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('uuId').value.trim();
+            const payload = {
+                name: document.getElementById('uuName').value.trim(),
+                email: document.getElementById('uuEmail').value.trim(),
+                password: document.getElementById('uuPassword').value
+            };
+            const res = await executeApiCall('PUT', `/user/${id}`, payload);
+            if (res.ok) showToast(`User #${id} updated!`, 'success');
+            else showToast('Failed to update user', 'error');
+        }
+
+        async function handleDeleteUserSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('duId').value.trim();
+            const res = await executeApiCall('DELETE', `/user/${id}`);
+            if (res.ok) showToast(`User #${id} deactivated!`, 'success');
+            else showToast('Failed to delete user', 'error');
+        }
+
+        // ================= PRESETS & HELPERS =================
+        function formatMoney(val) {
+            if (val === null || val === undefined) return '-';
+            return '₹' + parseFloat(val).toFixed(2);
+        }
+
+        function fillTransferScenario(sender, pass, receiver, amount) {
+            document.getElementById('tfUsername').value = sender;
+            document.getElementById('tfPassword').value = pass;
+            document.getElementById('tfToReceiverUsername').value = receiver;
+            document.getElementById('tfAmount').value = amount.toFixed(2);
+            generateIdempotencyKey('tfIdempotencyKey');
+            showToast(`Loaded ${sender} ➔ ${receiver} preset`, 'info');
+        }
+
+        function swapTransferRoles() {
+            const sender = document.getElementById('tfUsername').value;
+            const receiver = document.getElementById('tfToReceiverUsername').value;
+            document.getElementById('tfUsername').value = receiver;
+            document.getElementById('tfToReceiverUsername').value = sender;
+            generateIdempotencyKey('tfIdempotencyKey');
+            showToast('Swapped roles', 'info');
+        }
+
+        function setTransferAmount(val) {
+            document.getElementById('tfAmount').value = parseFloat(val).toFixed(2);
+        }
+
+        function setAddAmount(val) {
+            document.getElementById('amAmount').value = parseFloat(val).toFixed(2);
+        }
+
+        function prefillSender(username, password) {
+            switchTab('transfer');
+            document.getElementById('tfUsername').value = username;
+            document.getElementById('tfPassword').value = password;
+            showToast(`Sender set to ${username}`, 'info');
+        }
+
+        function prefillReceiver(username) {
+            switchTab('transfer');
+            document.getElementById('tfToReceiverUsername').value = username;
+            showToast(`Recipient set to ${username}`, 'info');
+        }
+
+        function fillAddMoneyScenario(walletId, username, amount) {
+            switchTab('addMoney');
+            document.getElementById('amWalletId').value = walletId;
+            document.getElementById('amUsername').value = username;
+            document.getElementById('amAmount').value = parseFloat(amount).toFixed(2);
+            generateIdempotencyKey('amIdempotencyKey');
+            showToast(`Preset: Wallet #${walletId} (${username})`, 'info');
+        }
+
+        function loadDemoScenario() {
+            fillTransferScenario('alice', 'pass123', 'bob', 100.00);
+            showToast('Demo scenario initialized!', 'success');
+        }
+
+        async function testConnection() {
+            const baseUrl = getBaseUrl();
+            showToast(`Testing connection to ${baseUrl}...`, 'info');
+            try {
+                const res = await fetch(baseUrl + '/transactions?page=0&size=1');
+                if (res.ok) showToast('Backend connection healthy!', 'success');
+                else showToast(`Backend responded with HTTP ${res.status}`, 'info');
+            } catch (e) {
+                showToast(`Could not reach ${baseUrl}. Verify Spring Boot is running.`, 'error');
+            }
+        }
+
+        function copyResponse() {
+            const text = document.getElementById('inspResponseBody').innerText;
+            navigator.clipboard.writeText(text).then(() => showToast('Copied JSON to clipboard', 'info'));
+        }
+
+        function clearInspector() {
+            updateInspectorHeader('IDLE', 'No request selected', 'IDLE', '0ms');
+            document.getElementById('inspRequestBody').innerHTML = '// Cleared';
+            document.getElementById('inspResponseBody').innerHTML = '// Cleared';
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+            toast.innerHTML = `<span>${icon}</span><span style="flex: 1;">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+            if (!json) return '';
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    cls = /:$/.test(match) ? 'json-key' : 'json-string';
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+    </script>
+</body>
+</html>
