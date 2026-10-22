@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-# Ignore sensitive database properties
-src/main/resources/application.properties
-application.properties
